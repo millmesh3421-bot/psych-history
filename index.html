@@ -1,0 +1,522 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  BookOpen, Brain, Award, Users, GitCompare, Clock, MessageSquare, 
+  HelpCircle, CheckSquare, Layers, FileText, Settings, Search, 
+  Bookmark, ArrowRight, CheckCircle, RefreshCw, Star, Share2, 
+  User, Shield, Moon, Sun, Menu, X, Play, Send, Plus, Trash2, 
+  Download, Printer, ChevronRight, ChevronDown, Check, AlertCircle, Sparkles, Database, Lock
+} from 'lucide-react';
+
+export default function App() {
+  // Navigation & UI States
+  const [activeTab, setActiveTab] = useState('home');
+  const [darkMode, setDarkMode] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Completed Topics State
+  const [completedTopics, setCompletedTopics] = useState({
+    '1.1': false, '1.2': false, '1.3': false,
+    '2.1': false, '2.2': false, '2.3': false, '2.4': false,
+    '2.5': false, '2.6': false, '2.7': false, '2.8': false,
+    '3.1': false
+  });
+
+  // AI Teacher State
+  const [aiChat, setAiChat] = useState([
+    { role: 'assistant', text: 'আদাব! আমি **PSYCH HISTORY AI শিক্ষক**। জাতীয় বিশ্ববিদ্যালয় অনার্স ৩য় বর্ষের **History of Psychology (Course Code: 233401)** সিলেবাসের যেকোনো টপিক সহজ বাংলায় বুঝতে, ১০ বা ৫ নম্বরের নোট তৈরি করতে, অথবা আপনার লেখা মূল্যায়ন করতে আমাকে যেকোনো প্রশ্ন করুন।' }
+  ]);
+  const [aiInput, setAiInput] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+
+  // MCQ State
+  const [mcqState, setMcqState] = useState({
+    started: false,
+    currentQuestion: 0,
+    score: 0,
+    selectedOption: null,
+    showExplanation: false,
+    quizCompleted: false,
+    answers: []
+  });
+
+  // Flashcards State
+  const [flashcardIndex, setFlashcardIndex] = useState(0);
+  const [flashcardFlipped, setFlashcardFlipped] = useState(false);
+
+  // Notes State
+  const [personalNotes, setPersonalNotes] = useState([
+    { id: 1, title: 'গঠনবাদের মূল বিষয়', content: 'উইলহ্যাক উন্ট ও টিচেনার introspection পদ্ধতি ব্যবহার করতেন।', chapter: 'অধ্যায় ০২' }
+  ]);
+  const [newNoteTitle, setNewNoteTitle] = useState('');
+  const [newNoteContent, setNewNoteContent] = useState('');
+  const [newNoteChapter, setNewNoteChapter] = useState('অধ্যায় ০১');
+
+  // Admin State
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminNotice, setAdminNotice] = useState('');
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Data: Chapters and Topics
+  const chapters = [
+    {
+      id: 'ch1',
+      title: 'অধ্যায় ০১: ভূমিকা (Introduction)',
+      topics: [
+        { id: '1.1', title: '১.১ প্রাচীন ধারণা ও চিন্তা (Ancient Ideas and Thoughts)', desc: 'প্রাচীন গ্রীক ও প্রাচ্য দর্শনে মনের ধারণা।' },
+        { id: '1.2', title: '১.২ অ্যারিস্টটলের দৃষ্টিভঙ্গি (Aristotle\'s Views)', desc: 'ডি অ্যানিমা (De Anima) ও মনস্তাত্ত্বিক চিন্তা।' },
+        { id: '1.3', title: '১.৩ ডার्वিনের বিবর্তনবাদ (Darwin\'s Theory of Evolution)', desc: 'কার্যপদ্ধতি ও তুলনামূলক মনোবিজ্ঞানের ওপর প্রভাব।' }
+      ]
+    },
+    {
+      id: 'ch2',
+      title: 'অধ্যায় ০২: মনোবিজ্ঞানের সম্প্রদায়সমূহ (Schools of Psychology)',
+      topics: [
+        { id: '2.1', title: '২.১ গঠনবাদ (Structuralism)', desc: 'উইলহেম উন্ট ও এডওয়ার্ড টিচেনার।' },
+        { id: '2.2', title: '২.২ কার্যবাদ (Functionalism)', desc: 'উইলিয়াম জেমস ও জন ডিউই।' },
+        { id: '2.3', title: '২.৩ সংযোগবাদ (Associationism)', desc: 'স্মৃতি ও শিখন প্রক্রিয়ার সংযোগ সূত্র।' },
+        { id: '2.4', title: '২.৪ আচরণবাদ (Behaviorism)', desc: 'জন বি ওয়াটসন ও বি এফ স্কিনার।' },
+        { id: '2.5', title: '২.৫ মনোসমীক্ষণ (Psychoanalysis)', desc: 'সিগমন্ড ফ্রয়েড ও অচেতন মন।' },
+        { id: '2.6', title: '২.৬ গেস্টল্ট মনোবিজ্ঞান (Gestalt Psychology)', desc: 'ম্যাক্স ওয়ার্থেইমার ও সমগ্রতাবাদী দৃষ্টিভঙ্গি।' },
+        { id: '2.7', title: '২.৭ মানবতাবাদী ও অস্তিত্ববাদী মনোবিজ্ঞান (Humanistic Existential Psychology)', desc: 'কার্ল রজার্স ও আব্রাহাম মাসলো।' },
+        { id: '2.8', title: '২.৮ প্রজ্ঞাবাদী মনোবিজ্ঞান (Cognitive Psychology)', desc: 'মানসিক প্রক্রিয়া ও তথ্য প্রক্রিয়াকরণ।' }
+      ]
+    },
+    {
+      id: 'ch3',
+      title: 'অধ্যায় ০৩: আধুনিক মনোবিজ্ঞান (Psychology Today)',
+      topics: [
+        { id: '3.1', title: '৩.১ মনোবিজ্ঞানের সাম্প্রতিক প্রবণতা (Recent Trends in Psychology)', desc: 'স্নায়ুমনোবিজ্ঞান, ইতিবাচক মনোবিজ্ঞান ও কৃত্রিম বুদ্ধিমত্তা।' }
+      ]
+    }
+  ];
+
+  // AI Message Handler
+  const handleAiSend = (e) => {
+    e.preventDefault();
+    if (!aiInput.trim()) return;
+
+    const userMsg = aiInput;
+    setAiChat(prev => [...prev, { role: 'user', text: userMsg }]);
+    setAiInput('');
+    setAiLoading(true);
+
+    setTimeout(() => {
+      let reply = `আপনার প্রশ্নটি ("${userMsg}") নোট করেছি। History of Psychology (Course Code: 233401) সিলেবাস অনুযায়ী, এটি একটি অত্যন্ত গুরুত্বপূর্ণ বিষয়। গঠনবাদ বা আচরণবাদের মতো এই তত্ত্বে ঐতিহাসিক প্রেক্ষাপট অত্যন্ত গুরুত্বপূর্ণ।`;
+      if (userMsg.toLowerCase().includes('গঠনবাদ') || userMsg.toLowerCase().includes('structuralism')) {
+        reply = `**গঠনবাদ (Structuralism):** উইলহেম উন্ট (Wilhelm Wundt) ১৮৭৯ সালে লাইপৎসিশ বিশ্ববিদ্যালয়ে প্রথম পরীক্ষাগার প্রতিষ্ঠার মাধ্যমে গঠনবাদের ভিত্তি স্থাপন করেন। এর মূল প্রবক্তা ছিলেন এডওয়ার্ড টিচেনার (Edward Titchener)। এই মতবাদের মূল লক্ষ্য ছিল অন্তদর্শন (Introspection) পদ্ধতির মাধ্যমে চেতন মনের মৌলিক উপাদানগুলো (সংবেদন, ভাব ও প্রতিবিম্ব) বিশ্লেষণ করা।`;
+      } else if (userMsg.toLowerCase().includes('আচরণবাদ') || userMsg.toLowerCase().includes('behaviorism')) {
+        reply = `**আচরণবাদ (Behaviorism):** ১৯১৩ সালে জন বি ওয়াটসন (John B. Watson) তাঁর বিখ্যাত ইশতেহার "Psychology as the Behaviorist Views It" প্রকাশের মাধ্যমে আচরণবাদের সূচনা করেন। অভ্যন্তরীণ মানসিক অবস্থা বাদ দিয়ে এই সম্প্রদায় স্পষ্টভাবেobservable behavior বা বাহ্যিক আচরণ এবং উদ্দীপক-প্রতিক্রিয়া (S-R) সম্পর্কের ওপর জোর দেয়।`;
+      }
+      setAiChat(prev => [...prev, { role: 'assistant', text: reply }]);
+      setAiLoading(false);
+    }, 1000);
+  };
+
+  return (
+    <div className={`min-h-screen ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} font-sans pb-20`}>
+      {/* Top Header */}
+      <header className="sticky top-0 z-50 bg-slate-900 text-white shadow-md border-b border-purple-900/50">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('home')}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-lg border border-purple-400/30">
+              <Brain className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold tracking-wide flex items-center gap-2">
+                PSYCH HISTORY <span className="text-xs bg-purple-600/60 px-2 py-0.5 rounded text-purple-200">M.A.S.</span>
+              </h1>
+              <p className="text-xs text-purple-300">An Academic Initiative by M.A.S. • NU Course 233401</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-lg bg-slate-800 text-purple-300 hover:bg-slate-700 transition"
+              title="ডার্ক মোড টগল করুন"
+            >
+              {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg bg-slate-800 text-purple-300"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Body */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {activeTab === 'home' && (
+          <div className="space-y-6">
+            {/* Hero Banner */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-purple-950 rounded-2xl p-6 md:p-8 text-white shadow-xl border border-purple-500/20 relative overflow-hidden">
+              <div className="absolute right-0 bottom-0 opacity-10 translate-x-10 translate-y-10">
+                <Brain className="w-72 h-72 text-purple-400" />
+              </div>
+              <div className="relative z-10 max-w-2xl">
+                <span className="inline-block bg-purple-600/40 text-purple-300 text-xs px-3 py-1 rounded-full mb-3 border border-purple-400/30">
+                  জাতীয় বিশ্ববিদ্যালয় • অনার্স ৩য় বর্ষ
+                </span>
+                <h2 className="text-2xl md:text-4xl font-extrabold mb-2 leading-tight">
+                  History of Psychology
+                </h2>
+                <p className="text-purple-200 text-sm md:text-base mb-6">
+                  মনোবিজ্ঞানের ইতিহাস ও ক্রমবিকাশ অধ্যয়নের জন্য একটি সম্পূর্ণ ডিজিটাল একাডেমিক প্ল্যাটফর্ম।
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button 
+                    onClick={() => setActiveTab('syllabus')}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg transition flex items-center gap-2"
+                  >
+                    পড়াশোনা শুরু করুন <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('ai')}
+                    className="bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-500/30 px-5 py-2.5 rounded-xl font-medium transition flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4 text-purple-400" /> AI শিক্ষক
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Daily Quote & Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm md:col-span-2 flex flex-col justify-between`}>
+                <div>
+                  <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">দৈনিক মনস্তাত্ত্বিক বাণী</span>
+                  <p className="text-lg italic font-medium mt-2">"Psychology has a long past, but only a short history."</p>
+                  <p className="text-sm text-slate-500 mt-1">— Hermann Ebbinghaus</p>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs text-slate-500">
+                  <span> কোর্স কোড: ২৩৩৪০১</span>
+                  <span>মোট মার্কস: ১০০</span>
+                </div>
+              </div>
+
+              <div className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+                ফিচার সমাহার:
+                <ul className="mt-3 space-y-2 text-sm">
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-purple-500" onClick={() => setActiveTab('syllabus')}>
+                    <CheckCircle className="w-4 h-4 text-purple-600" /> ৩টি অধ্যায় ও ১১টি টপিক
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-purple-500" onClick={() => setActiveTab('notes')}>
+                    <CheckCircle className="w-4 h-4 text-purple-600" /> ১০ ও ৫ নম্বরের নোটস
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-purple-500" onClick={() => setActiveTab('mcq')}>
+                    <CheckCircle className="w-4 h-4 text-purple-600" /> বাংলা MCQ পরীক্ষা
+                  </li>
+                  <li className="flex items-center gap-2 cursor-pointer hover:text-purple-500" onClick={() => setActiveTab('comparison')}>
+                    <CheckCircle className="w-4 h-4 text-purple-600" /> তুলনামূলক ছক
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Quick Access Grid */}
+            <h3 className="text-xl font-bold mt-6 mb-4">অধ্যয়ন কেন্দ্র ও টুলস</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { id: 'syllabus', title: 'সিলেবাস ও টপিক', icon: BookOpen, color: 'bg-blue-500/10 text-blue-600' },
+                { id: 'notes', title: 'পরীক্ষার নোটস', icon: FileText, color: 'bg-purple-500/10 text-purple-600' },
+                { id: 'library', title: 'মনোবিজ্ঞানী লাইব্রেরি', icon: Users, color: 'bg-emerald-500/10 text-emerald-600' },
+                { id: 'comparison', title: 'তুলনা কেন্দ্র', icon: GitCompare, color: 'bg-amber-500/10 text-amber-600' },
+                { id: 'timeline', title: 'ঐতিহাসিক টাইমলাইন', icon: Clock, color: 'bg-rose-500/10 text-rose-600' },
+                { id: 'ai', title: 'AI শিক্ষক', icon: Sparkles, color: 'bg-indigo-500/10 text-indigo-600' },
+                { id: 'mcq', title: 'MCQ পরীক্ষা', icon: HelpCircle, color: 'bg-cyan-500/10 text-cyan-600' },
+                { id: 'flashcards', title: 'ফ্ল্যাশকার্ড ও মেমোরি', icon: Layers, color: 'bg-violet-500/10 text-violet-600' }
+              ].map((item, idx) => {
+                const Icon = item.icon;
+                return (
+                  <div 
+                    key={idx}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800 hover:border-purple-500' : 'bg-white border-slate-200 hover:border-purple-400'} shadow-sm cursor-pointer transition flex flex-col items-center text-center`}
+                  >
+                    <div className={`p-3 rounded-xl ${item.color} mb-3`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-semibold text-sm">{item.title}</h4>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'syllabus' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">সিলেবাস ও টপিকসমূহ</h2>
+                <p className="text-sm text-slate-500">জাতীয় বিশ্ববিদ্যালয়ের অনার্স ৩য় বর্ষের অফিসিয়াল সিলেবাস (৩টি অধ্যায় ও ১১টি টপিক)</p>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {chapters.map((ch) => (
+                <div key={ch.id} className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+                  <h3 className="text-lg font-bold text-purple-600 dark:text-purple-400 mb-4">{ch.title}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ch.topics.map((top) => (
+                      <div key={top.id} className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'} flex flex-col justify-between`}>
+                        <div>
+                          <div className="flex justify-between items-start mb-2">
+                            <span className="text-xs font-semibold bg-purple-600/20 text-purple-600 dark:text-purple-300 px-2.5 py-0.5 rounded">
+                              টপিক {top.id}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-base mb-1">{top.title}</h4>
+                          <p className="text-xs text-slate-500 mb-4">{top.desc}</p>
+                        </div>
+                        <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800">
+                          <button 
+                            onClick={() => setActiveTab('notes')}
+                            className="text-xs font-semibold text-purple-600 hover:underline flex items-center gap-1"
+                          >
+                            নোটস পড়ুন <ArrowRight className="w-3 h-3" />
+                          </button>
+                          <label className="flex items-center gap-2 cursor-pointer text-xs">
+                            <input 
+                              type="checkbox" 
+                              checked={completedTopics[top.id]} 
+                              onChange={() => setCompletedTopics(prev => ({ ...prev, [top.id]: !prev[top.id] }))}
+                              className="rounded text-purple-600 focus:ring-purple-500"
+                            />
+                            পড়া সম্পন্ন
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notes' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">পরীক্ষাভিত্তিক নোটস ও প্রশ্নোত্তর</h2>
+            <p className="text-sm text-slate-500">অনার্স পরীক্ষার জন্য উপযোগী ১০, ৫ এবং ২ নম্বরের বিস্তারিত ও গুছানো উত্তর।</p>
+
+            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
+              <h3 className="text-lg font-bold text-purple-500">প্রশ্ন: গঠনবাদ (Structuralism) সম্পর্কে বিশদ আলোচনা কর। (১০ নম্বর)</h3>
+              <div className="space-y-3 text-sm leading-relaxed">
+                <p><strong>১. ভূমিকা:</strong> মনোবিজ্ঞানের ইতিহাসে গঠনবাদ হলো প্রথম সুসংগঠিত সম্প্রদায়। ১৮৭৯ সালে উইলহেম উন্ট জার্মানির লাইপৎসিশ বিশ্ববিদ্যালয়ে প্রথম পরীক্ষাগার স্থাপনের মাধ্যমে পরীক্ষামূলক মনোবিজ্ঞানের সূচনা করেন। পরবর্তীতে তাঁর শিষ্য এডওয়ার্ড টিচেনার একে 'গঠনবাদ' হিসেবে নামকরণ করেন।</p>
+                <p><strong>২. সংজ্ঞা:</strong> যে মতবাদে চেতন মনের গঠন বা উপাদানসমূহ (সংবেদন, ভাব ও প্রতিবিম্ব) বিশ্লেষণ করার ওপর জোর দেওয়া হয়, তাকে গঠনবাদ বলে।</p>
+                <p><strong>৩. মূল পদ্ধতি (Introspection):</strong> গঠনবাদীরা আত্মোপলব্ধি বা অন্তদর্শন পদ্ধতির ওপর নির্ভর করতেন, যেখানে প্রশিক্ষণপ্রাপ্ত পরীক্ষার্থীরা নিজেদের মনের ভেতরের অভিজ্ঞতা বর্ণনা করতেন।</p>
+                <p><strong>৪. অবদান ও সমালোচনা:</strong> এটি মনোবিজ্ঞানকে দর্শন থেকে আলাদা করে একটি স্বতন্ত্র বিজ্ঞান হিসেবে প্রতিষ্ঠা করেছে। তবে অন্তদর্শন পদ্ধতির নির্ভরযোগ্যতা ও অবৈজ্ঞানিক স্বভাবের কারণে পরবর্তীতে এর তীব্র সমালোচনা করা হয়।</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'library' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">মনোবিজ্ঞানী ও দার্শনিক লাইব্রেরি</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { name: 'উইলহেম উন্ট (Wilhelm Wundt)', years: '১৮৩২–১৯২০', country: 'জার্মানি', school: 'গঠনবাদ', desc: 'পরীক্ষামূলক মনোবিজ্ঞানের জনক।' },
+                { name: 'উইলিয়াম জেমস (William James)', years: '১৮৪২–১৯১০', country: 'যুক্তরাষ্ট্র', school: 'কার্যবাদ', desc: 'আমেরিকান মনোবিজ্ঞানের জনক ও কার্যবাদের প্রবক্তা।' },
+                { name: 'সিগমন্ড ফ্রয়েড (Sigmund Freud)', years: '১৮৫৬–১৯৩৯', country: 'অস্ট্রিয়া', school: 'মনোসমীক্ষণ', desc: 'অচেতন মন ও মনোসমীক্ষণ তত্ত্বের প্রবক্তা।' },
+                { name: 'জন বি ওয়াটসন (John B. Watson)', years: '১৮৭৮–১৯৫৮', country: 'যুক্তরাষ্ট্র', school: 'আচরণবাদ', desc: 'আচরণবাদের প্রতিষ্ঠাতা।' }
+              ].map((scholar, idx) => (
+                <div key={idx} className={`p-5 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm`}>
+                  <span className="text-xs bg-purple-600/20 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded">{scholar.school}</span>
+                  <h4 className="font-bold text-base mt-2">{scholar.name}</h4>
+                  <p className="text-xs text-slate-500 mt-1">জীবনকাল: {scholar.years} | দেশ: {scholar.country}</p>
+                  <p className="text-sm mt-3">{scholar.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'comparison' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">তুলনা কেন্দ্র (Comparison Center)</h2>
+            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm overflow-x-auto`}>
+              <h3 className="font-bold text-lg mb-4 text-purple-500">গঠনবাদ বনাম কার্যবাদ (Structuralism vs Functionalism)</h3>
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="p-3">তুলনার বিষয়</th>
+                    <th className="p-3">গঠনবাদ (Structuralism)</th>
+                    <th className="p-3">কার্যবাদ (Functionalism)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  <tr>
+                    <td className="p-3 font-semibold">প্রধান প্রবক্তা</td>
+                    <td className="p-3">উইলহেম উন্ট ও এডওয়ার্ড টিচেনার</td>
+                    <td className="p-3">উইলিয়াম জেমস ও জন ডিউই</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-semibold">মূল লক্ষ্য</td>
+                    <td className="p-3">চেতন মনের উপাদান বিশ্লেষণ করা</td>
+                    <td className="p-3">মন কীভাবে পরিবেশের সাথে খাপ খাইয়ে চলে তা অনুধাবন</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-semibold">পদ্ধতি</td>
+                    <td className="p-3">অন্তদর্শন (Introspection)</td>
+                    <td className="p-3">পরীক্ষামূলক ও পর্যবেক্ষণমূলক পদ্ধতি</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'timeline' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">ঐতিহাসিক টাইমলাইন</h2>
+            <div className="space-y-4 border-l-2 border-purple-600 pl-4 ml-2">
+              {[
+                { year: 'খ্রিস্টপূর্ব চতুর্থ শতাব্দী', event: 'অ্যারিস্টটলের "ডি অ্যানিমা" ও প্রাচীন গ্রীক দর্শন।' },
+                { year: '১৮৫৯', event: 'চার্লস ডারউইনের বিবর্তনবাদ প্রকাশ।' },
+                { year: '১৮৭৯', event: 'উইলহেম উন্ট কর্তৃক প্রথম পরীক্ষাগার প্রতিষ্ঠা (গঠনবাদের সূচনা)।' },
+                { year: '১৯১৩', event: 'জন বি ওয়াটসনের আচরণবাদী ইশতেহার প্রকাশ।' },
+                { year: '১৯০০', event: 'সিগমন্ড ফ্রয়েডের "Interpretation of Dreams" প্রকাশ।' }
+              ].map((item, idx) => (
+                <div key={idx} className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                  <span className="text-xs font-bold text-purple-500">{item.year}</span>
+                  <p className="font-semibold mt-1">{item.event}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ai' && (
+          <div className="space-y-4 max-w-3xl mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-purple-600 text-white">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">AI মনোবিজ্ঞান শিক্ষক</h2>
+                <p className="text-xs text-slate-500">বাংলা ও ইংরেজিতে যেকোনো একাডেমিক সহায়তার জন্য চ্যাট করুন</p>
+              </div>
+            </div>
+
+            <div className={`h-[450px] overflow-y-auto p-4 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} space-y-4 flex flex-col`}>
+              {aiChat.map((msg, idx) => (
+                <div key={idx} className={`p-3.5 rounded-2xl max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-purple-600 text-white ml-auto rounded-br-none' : `${darkMode ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800'} mr-auto rounded-bl-none`}`}>
+                  {msg.text}
+                </div>
+              ))}
+              {aiLoading && <div className="text-xs text-purple-400 italic">AI শিক্ষক চিন্তা করছেন...</div>}
+            </div>
+
+            <form onSubmit={aiSend => handleAiSend(aiSend)} className="flex gap-2">
+              <input 
+                type="text" 
+                value={aiInput}
+                onChange={e => setAiInput(e.target.value)}
+                placeholder="এখানে আপনার প্রশ্ন লিখুন (যেমন: গঠনবাদ বুঝিয়ে দিন)..."
+                className={`flex-1 p-3 rounded-xl border ${darkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200'} focus:outline-none focus:border-purple-500`}
+              />
+              <button type="submit" className="bg-purple-600 hover:bg-purple-700 text-white px-5 rounded-xl flex items-center justify-center">
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
+          </div>
+        )}
+
+        {activeTab === 'mcq' && (
+          <div className="space-y-6 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-bold text-center">MCQ পরীক্ষা সিস্টেম</h2>
+            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm text-center space-y-4`}>
+              <p className="text-sm text-slate-500">History of Psychology (233401) এর ওপর আপনার প্রস্তুতি যাচাই করুন।</p>
+              <button 
+                onClick={() => setMcqState({ started: true, currentQuestion: 0, score: 0, selectedOption: null, showExplanation: false, quizCompleted: false, answers: [] })}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-medium shadow-lg transition"
+              >
+                পরীক্ষা শুরু করুন
+              </button>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'flashcards' && (
+          <div className="space-y-6 max-w-xl mx-auto text-center">
+            <h2 className="text-2xl font-bold">ফ্ল্যাশকার্ড ও মেমোরি টুলস</h2>
+            <div 
+              onClick={() => setFlashcardFlipped(!flashcardFlipped)}
+              className={`p-10 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-lg cursor-pointer min-h-[220px] flex flex-col justify-center items-center transition transform`}
+            >
+              <span className="text-xs text-purple-500 mb-2">কার্ড ফ্লিপ করতে ট্যাপ করুন</span>
+              <h3 className="text-xl font-bold">
+                {flashcardFlipped ? '১৮৭৯ সাল • লাইপৎসিশ বিশ্ববিদ্যালয়' : 'প্রথম পরীক্ষাগার কে এবং কবে স্থাপন করেন?'}
+              </h3>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'notes_hub' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold">ব্যক্তিগত নোটস</h2>
+            <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} shadow-sm space-y-4`}>
+              <input 
+                type="text" 
+                placeholder="নোটের শিরোনাম..."
+                value={newNoteTitle}
+                onChange={e => setNewNoteTitle(e.target.value)}
+                className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`}
+              />
+              <textarea 
+                placeholder="আপনার নোট এখানে লিখুন..."
+                value={newNoteContent}
+                onChange={e => setNewNoteContent(e.target.value)}
+                className={`w-full p-3 rounded-xl border ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'} h-32`}
+              />
+              <button 
+                onClick={() => {
+                  if (newNoteTitle && newNoteContent) {
+                    setPersonalNotes(prev => [...prev, { id: Date.now(), title: newNoteTitle, content: newNoteContent, chapter: newNoteChapter }]);
+                    setNewNoteTitle('');
+                    setNewNoteContent('');
+                  }
+                }}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-medium"
+              >
+                নোট সেভ করুন
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Bottom Navigation Bar for Mobile */}
+      <nav className={`fixed bottom-0 left-0 right-0 z-50 ${darkMode ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200'} backdrop-blur-md border-t px-2 py-2 flex justify-around items-center md:hidden`}>
+        {[
+          { id: 'home', title: 'হোম', icon: Brain },
+          { id: 'syllabus', title: 'সিলেবাস', icon: BookOpen },
+          { id: 'notes', title: 'নোটস', icon: FileText },
+          { id: 'ai', title: 'AI শিক্ষক', icon: Sparkles },
+          { id: 'mcq', title: 'MCQ', icon: HelpCircle }
+        ].map((item, idx) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button 
+              key={idx}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center gap-1 p-1 rounded-xl transition ${isActive ? 'text-purple-600 dark:text-purple-400 font-bold' : 'text-slate-500'}`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px]">{item.title}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
