@@ -1,6 +1,7 @@
 {
   "name": "History of Psychology",
   "short_name": "Psych History",
+  "description": "Explore the comprehensive history of psychology for students and learners.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
